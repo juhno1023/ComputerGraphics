@@ -1,0 +1,60 @@
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+# --- 1. 실제 이미지 로드 ---
+image_path = 'test_image4.png'
+color_img = cv2.imread(image_path)
+
+if color_img is None:
+    print(f" 오류: '{image_path}' 경로에서 이미지를 찾을 수 없습니다.")
+    print(" 더미 이미지(사각형)를 생성하여 연산을 데모로 보여드립니다.")
+    # 원본 이미지가 없을 경우를 대비한 가상의 400x400 사각형 이미지
+    binary_img = np.zeros((400, 400), dtype=np.uint8)
+    cv2.rectangle(binary_img, (100, 100), (300, 300), 255, -1) 
+else:
+    print("이미지를 성공적으로 불러왔습니다. 연산을 시작합니다...\n")
+    # --- 2. 전처리: 컬러 -> 흑백 -> 이진화 ---
+    gray_img = cv2.cvtColor(color_img, cv2.COLOR_BGR2GRAY)
+    _, binary_img = cv2.threshold(gray_img, 127, 255, cv2.THRESH_BINARY)
+
+# --- 3. 비교할 마스크(Mask) 이미지 생성 ---
+# AND, OR 연산을 위해 원본 이미지와 '정확히 동일한 크기'의 마스크를 만듭니다.
+h, w = binary_img.shape
+mask_img = np.zeros((h, w), dtype=np.uint8)
+
+# 중앙에 흰색(255) 원 그리기
+center = (w // 2, h // 2)
+radius = min(h, w) // 3
+cv2.circle(mask_img, center, radius, 255, -1)
+
+# --- 4. 핵심 논리 연산 (Bitwise Operations) ---
+
+# (1) NOT 연산 (~): 픽셀 값 반전 (흰색->검은색, 검은색->흰색)
+not_img = cv2.bitwise_not(binary_img)
+
+# (2) AND 연산 (&): 교집합. 두 이미지 모두 흰색(255)인 부분만 흰색으로 남음.
+and_img = cv2.bitwise_and(binary_img, mask_img)
+
+# (3) OR 연산 (|): 합집합. 두 이미지 중 하나라도 흰색(255)이면 흰색이 됨.
+or_img = cv2.bitwise_or(binary_img, mask_img)
+
+# (4) XOR 연산 (^): 배타적 논리합. 두 이미지의 픽셀 값이 서로 다를 때만 흰색이 됨.
+xor_img = cv2.bitwise_xor(binary_img, mask_img)
+
+# --- 5. 결과 시각화 ---
+# 2행 3열 구조로 그래프 시각화
+plt.figure(figsize=(18, 10))
+
+titles = ['1. Original Binary', '2. Mask Image', '3. NOT (Original)', 
+          '4. AND (Orig & Mask)', '5. OR (Orig | Mask)', '6. XOR (Orig ^ Mask)']
+images = [binary_img, mask_img, not_img, and_img, or_img, xor_img]
+
+for i in range(6):
+    plt.subplot(2, 3, i + 1)
+    plt.imshow(images[i], cmap='gray')
+    plt.title(titles[i], fontsize=14, fontweight='bold')
+    plt.axis('off')
+
+plt.tight_layout()
+plt.show()

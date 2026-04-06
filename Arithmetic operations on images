@@ -1,0 +1,57 @@
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+# --- 1. 실제 이미지 로드 ---
+image_path = 'test_image4.png'
+color_img = cv2.imread(image_path)
+
+if color_img is None:
+    print(f"❌ 오류: '{image_path}' 경로에서 이미지를 찾을 수 없습니다.")
+    binary_img = np.zeros((400, 400), dtype=np.uint8)
+    cv2.rectangle(binary_img, (100, 100), (300, 300), 255, -1) 
+else:
+    print("✅ 이미지를 성공적으로 불러왔습니다. 산술 연산을 시작합니다...\n")
+    # 원본 코드 그대로 '이진화' 적용 (밝기 정보 건드리지 않음)
+    gray_img = cv2.cvtColor(color_img, cv2.COLOR_BGR2GRAY)
+    _, binary_img = cv2.threshold(gray_img, 127, 255, cv2.THRESH_BINARY)
+
+# --- 2. 도형(Shape) 이미지 생성 ---
+# 배경은 0(검은색), 동그라미는 255(흰색)
+h, w = binary_img.shape
+shape_img = np.zeros((h, w), dtype=np.uint8)
+center = (w // 2, h // 2)
+radius = min(h, w) // 3
+cv2.circle(shape_img, center, radius, 255, -1)
+
+# --- 3. 핵심 산술 연산 (Arithmetic Operations) ---
+# 두 이미지 모두 0과 255로만 이루어져 있습니다.
+
+# (1) Addition (덧셈)
+add_img = cv2.add(binary_img, shape_img)
+
+# (2) Subtraction (뺄셈)
+sub_img = cv2.subtract(binary_img, shape_img)
+
+# (3) Multiplication (곱셈)
+mul_img = cv2.multiply(binary_img, shape_img)
+
+# (4) Division (나눗셈)
+div_img = cv2.divide(binary_img, shape_img)
+
+# --- 4. 결과 시각화 ---
+plt.figure(figsize=(18, 10))
+
+titles = ['1. Original Binary (test4)', '2. Shape Image (Circle)', '3. Addition (+)', 
+          '4. Subtraction (-)', '5. Multiplication (*)', '6. Division (/)']
+images = [binary_img, shape_img, add_img, sub_img, mul_img, div_img]
+
+for i in range(6):
+    plt.subplot(2, 3, i + 1)
+    # vmin=0, vmax=255 로 고정하여 픽셀값의 수학적 결과를 정확히 보여줌
+    plt.imshow(images[i], cmap='gray', vmin=0, vmax=255)
+    plt.title(titles[i], fontsize=14, fontweight='bold')
+    plt.axis('off')
+
+plt.tight_layout()
+plt.show()
